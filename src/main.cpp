@@ -6,7 +6,11 @@
 #include <vector>
 #include <queue>
 #include <string>
+#include "waveout.h"
 #include "dbg.h"
+
+#include "untitled_0049.h"
+
 #define M_PI 3.1415926535897932384626
 class Window
 {
@@ -106,14 +110,10 @@ private:
 			MSG msg;
 			while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
 			{
-				//DBG("msgA:%d\n", msg.message);
-				switch (msg.message)
+				if (msg.message == WM_QUIT)
 				{
-				case WM_QUIT:
 					Close();
 					return;
-					break;
-					//case ...(以lambda的方式通过taskQueue传递回调到窗口线程)
 				}
 				TranslateMessage(&msg);
 				DispatchMessage(&msg);
@@ -228,7 +228,7 @@ public:
 		// 设置视图矩阵
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glTranslatef(0.0f, 0.0f, -5.0f);  // 相机位置
+		glTranslatef(0.0f, 0.0f, -6.0f);  // 相机位置
 
 		glRotatef(time += 0.5, 0.5f, 1.0f, 0.0f);
 
@@ -354,7 +354,7 @@ public:
 		// 设置视图矩阵
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
-		glTranslatef(0.0f, 0.0f, -5.0f);  // 相机位置
+		glTranslatef(0.0f, 0.0f, -6.0f);  // 相机位置
 
 		// 更新旋转
 		rotationAngle += 1.0f;
@@ -396,17 +396,111 @@ private:
 	}
 };
 
+#define MaxPolyN 32
+class PolyManager
+{
+private:
+	int32_t notebuf[MaxPolyN];
+	int32_t vbuf[MaxPolyN];
+	float freqbuf[MaxPolyN];
+	float velobuf[MaxPolyN];
+	int statebuf[MaxPolyN];
+	int tickbuf[MaxPolyN];
+	int pos = 0;
+public:
+	void NoteOn(int note, int velo, int tick)
+	{
+		notebuf[pos] = note;
+		vbuf[pos] = velo;
+		freqbuf[pos] = 440.0 * powf(2.0, (float)(note - 60 + 3) / 12.0);
+		velobuf[pos] = (float)velo / 128.0;
+		statebuf[pos] = 1;
+		pos++;
+		if (pos >= MaxPolyN)pos = 0;
+	}
+	void NoteOff(int note, int velo)
+	{
+		int maxTick = -999, maxi = -1;
+		for (int i = 0; i < MaxPolyN; ++i)
+		{
+			if (notebuf[i] == note)
+			{
+				statebuf[i] = 0;
+			}
+		}
+	}
+	float GetFreq(int poly)
+	{
+		return freqbuf[poly];
+	}
+	float GetVelocity(int poly)
+	{
+		return velobuf[poly];
+	}
+	float GetState(int poly)
+	{
+		return statebuf[poly];
+	}
+};
 
 AppCube app1;
 AppTorus app2;
+WaveOut wo;
+#define numSamples 512
+float wavbufl[numSamples];
+float wavbufr[numSamples];
+PolyManager poly;
+float oscts[MaxPolyN];
 int main()
 {
 	app1.Create("cube", 640, 480);
 	app2.Create("torus", 640, 480);
+	wo.Init();
+	wo.Start();
+	int sampleRate = wo.GetSampleRate();
+
+	int tickSamples = 200;
+	int numInfo = sizeof(ticks) / sizeof(uint32_t);
+	int samplesCount = 0;
+	int tickCount = 15634;
+	int readPos = 0;
 	for (;;)
 	{
-
-		std::this_thread::sleep_for(std::chrono::microseconds(100));
+		for (int i = 0; i < numSamples; ++i)
+		{
+			samplesCount++;
+			if (samplesCount >= tickSamples)
+			{
+				samplesCount -= tickSamples;
+				tickCount++;
+				if (tickCount >= ticks[numInfo])
+				{
+					//tickCount = 0;
+					//readPos = 0;
+				}
+				while (ticks[readPos] <= tickCount)
+				{
+					//todo:updata midi
+					if (cmds[readPos] == 0x90) poly.NoteOn(notes[readPos], velos[readPos], tickCount);
+					if (cmds[readPos] == 0x80) poly.NoteOff(notes[readPos], velos[readPos]);
+					readPos++;
+				}
+			}
+			float outl = 0, outr = 0;
+			for (int j = 0; j < MaxPolyN; ++j)
+			{
+				oscts[j] += poly.GetFreq(j) / sampleRate;
+				oscts[j] -= 2 * (int)oscts[j];
+				outl += oscts[j] * poly.GetVelocity(j) * poly.GetState(j);
+				outr += oscts[j] * poly.GetVelocity(j) * poly.GetState(j);
+			}
+			wavbufl[i] = outl * 0.05;
+			wavbufr[i] = outr * 0.05;
+		}
+		wo.FillBuffer(wavbufl, wavbufr, numSamples);
+		DBG("tick:%d\n", tickCount);
+		//std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
+	wo.Close();
 	return 0;
 }

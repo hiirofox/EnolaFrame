@@ -13,7 +13,7 @@ void WaveOut::_FillBuffer<float>(const float* bufferL, const float* bufferR, int
 	{
 		hr = renderService->GetBuffer(numSamples, &buffer);
 		if (buffer != NULL)break;
-		std::this_thread::sleep_for(std::chrono::nanoseconds(10)); // 解决了，cpu占用异常的问题
+		std::this_thread::sleep_for(std::chrono::nanoseconds(100)); // 解决了，cpu占用异常的问题
 	}
 	HResultCheckFailed(hr);
 	for (int i = 0, j = 0; i < numSamples; ++i, j += 2)
