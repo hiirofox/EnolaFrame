@@ -28,8 +28,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 link_directories(${WINDOWS_SDK_LIB_PATH})
 add_executable(EnolaSAW 
     src/main.cpp 
-    src/waveout.cpp
     src/dbg.cpp
+    src/Waveout.cpp
 )
 
 find_package(OpenGL REQUIRED)
