@@ -310,8 +310,8 @@ public:
 	{
 		Enola::Rectangle bounds = GetBounds();
 		int w = bounds.w, h = bounds.h;
-		if (isClick)glColor3ui(0x00, 0xff, 0x00);
-		else glColor3ui(0xff, 0xff, 0xff);
+		if (isClick)glColor3ub(0x00, 0xff, 0x00);
+		else glColor3ub(0xff, 0xff, 0xff);
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);
 		glVertex2i(w, 0);
@@ -345,8 +345,8 @@ public:
 		//DBG("Repaint!\n");
 		Enola::Rectangle bounds = GetBounds();
 		int w = bounds.w, h = bounds.h;
-		if (isClick)glColor3ui(0x00, 0xff, 0xff);
-		else glColor3ui(0x00, 0x00, 0xff);
+		if (isClick)glColor3ub(0x00, 0xff, 0xff);
+		else glColor3ub(0x00, 0x00, 0xff);
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);
 		glVertex2i(w, 0);
