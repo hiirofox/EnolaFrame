@@ -8,6 +8,7 @@
 #include <thread>
 
 #include "dbg.h"
+#include "Type.h"
 
 namespace Enola
 {
@@ -157,5 +158,8 @@ namespace Enola
 		HWND	GetHWND() { return hwnd; }
 		HDC		GetHDC() { return hdc; }
 		HGLRC	GetHGLRC() { return hglrc; }
+
+		void MakeContextCorrect() { wglMakeCurrent(hdc, hglrc); }
+		void Refresh() { SwapBuffers(hdc); }
 	};
 }
