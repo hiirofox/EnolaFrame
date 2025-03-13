@@ -1,70 +1,45 @@
 #include <Windows.h>
 #include <gl/GL.h>
 #include "Component.h"
+#include "VirtualWindow.h"
 #include "Window.h"
 
 #include "dbg.h"
 #include "Type.h"
 
-class Comp1 :public Enola::Component
+class Wnd1 :public Enola::VirtualWindow
 {
 private:
-	int isClick = 0;
 public:
 	void Paint(Enola::Graphics& g)override
 	{
 		Enola::Rectangle bounds = GetBounds();
 		int w = bounds.w, h = bounds.h;
-		if (isClick)glColor3ub(0x00, 0xff, 0x00);
-		else glColor3ub(0xff, 0xff, 0xff);
-		glBegin(GL_QUADS);
-		glVertex2i(0, 0);
-		glVertex2i(w, 0);
-		glVertex2i(w, h);
-		glVertex2i(0, h);
-		glEnd();
-	}
+		g.SetColor(color);
+		g.DrawFillRect(0, 0, w, h);
+	};
 	void Resize(Enola::Rectangle parentBounds, Enola::Rectangle windowBounds)override
 	{
 		SetBounds({ 64,64,128,128 });
 	}
-	void MouseMsg(int x, int y, int msg)override
-	{
-		if (msg == WM_LBUTTONDOWN)isClick = 1;
-		else if (msg == WM_LBUTTONUP)isClick = 0;
-		Repaint();
-	}
+	int color;
 };
-
 class App1 :public Enola::Window
 {
 private:
-	Comp1 testComp;
-	int isClick;
+	Wnd1 wnds[5];
 public:
 	App1()
 	{
-		AddAndMakeVisible(testComp);
+		for (int i = 0; i < 5; ++i)
+		{
+			wnds[i].color = 0xff000000 | (rand() * rand() % 0xffffff);
+			AddAndMakeVisible(wnds[i]);
+		}
 	}
 	void Paint(Enola::Graphics& g)override
 	{
-		//DBG("Repaint!\n");
-		Enola::Rectangle bounds = GetBounds();
-		int w = bounds.w, h = bounds.h;
-		if (isClick)glColor3ub(0x00, 0xff, 0xff);
-		else glColor3ub(0x00, 0x00, 0xff);
-		glBegin(GL_QUADS);
-		glVertex2i(0, 0);
-		glVertex2i(w, 0);
-		glVertex2i(w, h);
-		glVertex2i(0, h);
-		glEnd();
-	}
-	void MouseMsg(int x, int y, int msg)override
-	{
-		if (msg == WM_LBUTTONDOWN)isClick = 1;
-		else if (msg == WM_LBUTTONUP)isClick = 0;
-		Repaint();
+		g.Clear(0x00000000);
 	}
 };
 
